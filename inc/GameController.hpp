@@ -31,6 +31,13 @@ class GameController
 {
 public:
     void startGame();
+
+    // in - out operations
+    void readData(std::istream& input);
+    void writeSolution(int column);
+private:
+    Grid currentGrid_;
+    BlockPairQueue nextBlocks_;
 };
 
 #endif  // GAME_CONTROLLER
