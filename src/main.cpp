@@ -3,6 +3,7 @@
 
 int main()
 {
-    std::cout << "Start ... \n";
+    GameController gc;
+    gc.startGame();
     return 0;
 }
