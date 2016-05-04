@@ -12,6 +12,11 @@ Grid::Grid()
     grid_.resize(6);
 }
 
+void Grid::reset(std::vector<std::string> newGrid)
+{
+    grid_ = newGrid;
+}
+
 void GameController::startGame()
 {
     printDebug("Game started!");
@@ -24,22 +29,30 @@ void GameController::startGame()
 
 void GameController::readData(std::istream& input)
 {
-    for (int i = 0; i < 8; i++)
+    BlockPairQueue nextBlocks;
+    std::vector<std::string> myNewGrid;
+    std::vector<std::string> opponentNewGrid;
+    for (int i = 0; i < QUEUE_LENGTH; i++)
     {
         int colorA;
         int colorB;
         input >> colorA >> colorB; input.ignore();
+        nextBlocks.push_back(std::make_pair(Block(colorA), Block(colorB)));
     }
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < GRID_HEIGHT; i++)
     {
         std::string row;
         input >> row; input.ignore();
+        myNewGrid.push_back(row);
     }
-    for (int i = 0; i < 12; i++)
+    for (int i = 0; i < GRID_HEIGHT; i++)
     {
         std::string row;
         input >> row; input.ignore();
+        opponentNewGrid.push_back(row);
     }
+    nextBlocks_ = nextBlocks;
+    currentGrid_.reset(myNewGrid);
 }
 
 void GameController::writeSolution(int column)
