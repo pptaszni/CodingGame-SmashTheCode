@@ -1,4 +1,4 @@
-#include <set>
+
 #include "GameController.hpp"
 
 void printDebug(std::string msg)
@@ -81,6 +81,56 @@ int Grid::getNumNeighboursAfterInsert(int colNum, BlockPair blockPair) const
     visitedPositions.erase(newPositions.second);
     std::ostringstream dbgMsg;
     return visitedPositions.size();
+}
+
+std::vector<std::pair<int, int> > Grid::getPossibleChainScores(BlockPair blockPair) const
+{
+    std::vector<std::pair<int, int> > scoreColumnResults; // [score, column]
+    for (int j=0; j<size2_; j++)
+    {
+        int blocksAlike = 0;
+        int blocksDifferent = 0;
+        int height = getPositionsAfterInsert(j).first.first;
+        if (height < 1)
+        {
+            scoreColumnResults.push_back(std::make_pair(blocksAlike, j));
+            continue;
+        }
+        height++;
+        while (inBounds(height, j) && grid_[height][j] != blockPair.first.color)
+        {
+            height++;
+            blocksDifferent++;
+        }
+        if (blocksDifferent == 0)
+        {
+            scoreColumnResults.push_back(std::make_pair(blocksAlike, j));
+            continue;
+        }
+        while (inBounds(height, j) && grid_[height][j] == blockPair.first.color)
+        {
+            height++;
+            blocksAlike++;
+        }
+        scoreColumnResults.push_back(std::make_pair(blocksAlike, j));
+    }
+    return scoreColumnResults;
+}
+
+int Grid::countEmptyCells() const
+{
+    int emptyCells = 0;
+    for (const auto& row : grid_)
+    {
+        for (auto cell : row)
+        {
+            if (cell == '.')
+            {
+                emptyCells++;
+            }
+        }
+    }
+    return emptyCells;
 }
 
 void Grid::updateSize()
@@ -233,6 +283,26 @@ std::pair<int, bool> findColWithHighestSimpleScore(const Grid& grid, BlockPair b
         return std::make_pair(bestCol, false);
     }
 }
+
+std::vector<std::pair<int, int> > getColsSortedByHighScore(const Grid& grid, BlockPair blockPair)
+{
+    std::vector<std::pair<int, int> > sortedCols;
+    for (int i=0; i<GRID_WIDTH; i++)
+    {
+        int score = grid.getNumNeighboursAfterInsert(i, blockPair);
+        sortedCols.push_back(std::make_pair(score, i));
+    }
+    std::sort(sortedCols.begin(), sortedCols.end(), std::greater<std::pair<int, int> >());
+    return sortedCols;
+}
+
+std::vector<std::pair<int, int> > getColsSortedByChainChance(const Grid& grid, BlockPair blockPair)
+{
+    std::vector<std::pair<int, int> > sortedCols;
+    sortedCols = grid.getPossibleChainScores(blockPair);
+    std::sort(sortedCols.begin(), sortedCols.end(), std::greater<std::pair<int, int> >());
+    return sortedCols;
+}
 }
 
 
@@ -240,26 +310,51 @@ std::pair<int, bool> findColWithHighestSimpleScore(const Grid& grid, BlockPair b
 void GameController::startGame()
 {
     printDebug("Game started!");
-    simpleStrategy();
-}
-
-void GameController::simpleStrategy()
-{
-    int shortestColNum = 0;
     while(1)
     {
+        int solution = 0;
         readData(std::cin);
         fullDebugPrint();
-        auto result = GridAnalysis::findColWithHighestSimpleScore(currentGrid_, nextBlocks_[0]);
-        if (result.second)
+        int numEmptyCells = currentGrid_.countEmptyCells();
+        if (numEmptyCells > 36 && numEmptyCells < 60)
         {
-            writeSolution(result.first);
+            solution = tryChainsStrategy();
         }
         else
         {
-            shortestColNum = GridAnalysis::findShortestColumn(currentGrid_);
-            writeSolution(shortestColNum);
+            solution = simpleStrategy();
         }
+        writeSolution(solution);
+    }
+}
+
+int GameController::simpleStrategy()
+{
+    int shortestColNum = 0;
+
+    auto result = GridAnalysis::findColWithHighestSimpleScore(currentGrid_, nextBlocks_[0]);
+    if (result.second)
+    {
+        return result.first;
+    }
+    else
+    {
+        shortestColNum = GridAnalysis::findShortestColumn(currentGrid_);
+        return shortestColNum;
+    }
+}
+
+int GameController::tryChainsStrategy()
+{
+    int bestCol = 0;
+    auto sortedCols = GridAnalysis::getColsSortedByChainChance(currentGrid_, nextBlocks_[0]);
+    if (sortedCols[0].first > 0)
+    {
+        return sortedCols[0].second;
+    }
+    else
+    {
+        return simpleStrategy();
     }
 }
 

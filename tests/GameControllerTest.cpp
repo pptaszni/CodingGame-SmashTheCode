@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 #include "gmock/gmock.h"
 #include <fstream>
+#include <iostream>
 #include <cmath>
 #include "GameController.hpp"
 
@@ -104,6 +105,20 @@ TEST_F(GridShould, returnCorrectNumOfNeighboursForDifferentBlockPairs)
     ASSERT_EQ(0, sut_.getNumNeighboursAfterInsert(5, bp4));
 }
 
+TEST_F(GridShould, find46EmptyCells)
+{
+    ifstream mockGridStream;
+    mockGridStream.open("data/mockGrid1.dat");
+    ASSERT_TRUE(mockGridStream.is_open());
+    sut_.reset(mockGridStream);
+    mockGridStream.close();
+
+    ASSERT_EQ(GRID_HEIGHT, sut_.size1());
+    ASSERT_EQ(GRID_WIDTH, sut_.size2());
+
+    ASSERT_EQ(46, sut_.countEmptyCells());
+}
+
 TEST_F(GridAnalysisShould, findTheShortestColumn)
 {
     ifstream mockGridStream;
@@ -137,4 +152,47 @@ TEST_F(GridAnalysisShould, select4thColAsMostAttractive)
     int bestCol = GridAnalysis::findColWithHighestSimpleScore(mockGrid_, refBlockPair).first;
 
     ASSERT_EQ(refBestCol, bestCol);
+}
+
+TEST_F(GridAnalysisShould, returnCols4And1AsMostAttractive)
+{
+    ifstream mockGridStream;
+    mockGridStream.open("data/mockGrid1.dat");
+    ASSERT_TRUE(mockGridStream.is_open());
+    mockGrid_.reset(mockGridStream);
+    mockGridStream.close();
+
+    ASSERT_EQ(GRID_HEIGHT, mockGrid_.size1());
+    ASSERT_EQ(GRID_WIDTH, mockGrid_.size2());
+
+    BlockPair refBlockPair = std::make_pair(Block('1'), Block('1'));
+    int refBestCol = 4;
+    int refSecondBestCol = 1;
+    std::vector<std::pair<int, int> > sortedCols = GridAnalysis::getColsSortedByHighScore(mockGrid_, refBlockPair);
+
+    ASSERT_EQ(GRID_WIDTH, sortedCols.size());
+    ASSERT_EQ(refBestCol, sortedCols[0].second);
+    ASSERT_EQ(refSecondBestCol, sortedCols[1].second);
+}
+
+TEST_F(GridAnalysisShould, returnColsSortedByChainChance)
+{
+    ifstream mockGridStream;
+    mockGridStream.open("data/mockGrid1.dat");
+    ASSERT_TRUE(mockGridStream.is_open());
+    mockGrid_.reset(mockGridStream);
+    mockGridStream.close();
+
+    ASSERT_EQ(GRID_HEIGHT, mockGrid_.size1());
+    ASSERT_EQ(GRID_WIDTH, mockGrid_.size2());
+
+    BlockPair refBlockPair = std::make_pair(Block('1'), Block('1'));
+    int refBestCol = 0;
+    std::vector<std::pair<int, int> > sortedCols = GridAnalysis::getColsSortedByChainChance(mockGrid_, refBlockPair);
+    for (auto parka : sortedCols)
+    {
+        std::cout << "[" << parka.first << "," << parka.second << "]" << std::endl;
+    }
+    ASSERT_EQ(GRID_WIDTH, sortedCols.size());
+    ASSERT_EQ(refBestCol, sortedCols[0].second);
 }

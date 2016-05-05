@@ -8,6 +8,8 @@
 #include <string>
 #include <queue>
 #include <set>
+#include <set>
+#include <algorithm>
 
 #define QUEUE_LENGTH 8
 #define GRID_WIDTH 6
@@ -52,6 +54,8 @@ public:
 
     // algorithms
     int getNumNeighboursAfterInsert(int colNum, BlockPair blockPair) const;
+    int countEmptyCells() const;
+    std::vector<std::pair<int, int> > getPossibleChainScores(BlockPair blockPair) const;
 protected:
     void updateSize();
 private:
@@ -69,6 +73,8 @@ namespace GridAnalysis
 {
 int findShortestColumn(const Grid& grid);
 std::pair<int, bool> findColWithHighestSimpleScore(const Grid& grid, BlockPair blockPair);
+std::vector<std::pair<int, int> > getColsSortedByHighScore(const Grid& grid, BlockPair blockPair);
+std::vector<std::pair<int, int> > getColsSortedByChainChance(const Grid& grid, BlockPair blockPair);
 }
 
 class GameController
@@ -77,7 +83,8 @@ public:
     void startGame();
 
     // strategies
-    void simpleStrategy();
+    int simpleStrategy();
+    int tryChainsStrategy();
 
     // getters
     BlockPairQueue getNextBlocks();
